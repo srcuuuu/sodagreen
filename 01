@@ -1,0 +1,94 @@
+import random
+
+def album_battle():
+    albums = {
+        "蘇打綠": ["後悔莫及", "飛魚", "oh oh oh oh......", "That Moment Is Over", "是我的海", "漂浮",
+              "頻率", "你喔！", "降落練習存在孿生基因", "相對論IV", "窺"],
+        
+        "小宇宙": ["you are, you will", "小宇宙", "小情歌", "符號", "暫時失控", "被雨困住的城市", "已經",
+              "吵", "背著你", "墜落", "無言歌"],
+        
+        "無與倫比的美麗": ["遊樂", "花茶", "四季狂想", "左邊", "無與倫比的美麗", "白日出沒的月球", "這天",
+                  "簡單生活", "城市", "相信"],
+        
+        "春日光": ["融雪之前", "牧神搭上春色的火車，而", "日光", "在我們之間","各站停靠", "一千座噴泉",
+              "交響夢", "異次元的玫瑰", "嬉戲之後", "早點回家"],
+        
+        "夏狂熱": ["掌聲落下", "他夏了夏天", "蟬想", "包圍", "御花園", "彼得與狼", "共舞", "無眠",
+              "狂熱", "煽動", "近未來"],
+        
+        "你在煩惱什麼": ["幸福額度", "你被寫在我的歌裡", "如果凝結就是愛", "喜歡寂寞", "燕窩", "繭",
+                 "當我們一起走過", "浪漫派", "控制狂", "你在煩惱什麼"],    
+        
+        "秋故事": ["故事", "從一片落葉開始", "獨處的時候", "我好想你", "偷閒的翅膀" , "天天晴朗" ,"說了再見以後" , 
+              "我們走了一光年" ,"再遇見" , "拾穗" , "你心裡最後一個" , "小星星" ],
+
+        "冬未了": ["痛快的哀艷", "對殺人狂指控" , "地平線" , "我們不懂", "博物館" , "回車諾比的夢" , "下雨的夜晚" ,
+              "我們走了一光年" , "他舉起右手點名" , "Everyone" , "牆外的風景" , "未了" , "Must Keep Singing" ],
+    }
+    
+    # 讓玩家選擇專輯
+    print("請選擇專輯：")
+    album_names = list(albums.keys())
+    for i, name in enumerate(album_names, 1):
+        print(f"{i}: {name}")
+    
+    while True:
+        try:
+            album_choice = int(input("請輸入專輯編號: "))
+            if 1 <= album_choice <= len(album_names):
+                selected_album = album_names[album_choice - 1]
+                album_songs = albums[selected_album]
+                break
+            else:
+                print("請輸入有效的專輯編號！")
+        except ValueError:
+            print("請輸入數字！")
+    
+    # 讓玩家選擇挑戰歌曲數量
+    while True:
+        try:
+            num_songs = int(input(f"請選擇挑戰歌曲數量 (最多 {len(album_songs)} 首): "))
+            if num_songs <= 0 or num_songs > len(album_songs):
+                print("請輸入有效的數量！")
+                continue
+            break
+        except ValueError:
+            print("請輸入數字！")
+    
+    # 隨機選取指定數量的歌曲
+    selected_songs = random.sample(album_songs, num_songs)
+    chosen_songs = set()
+    current_song = None
+    
+    while len(chosen_songs) < num_songs - 1:
+        if current_song is None:
+            song1, song2 = random.sample(selected_songs, 2)
+        else:
+            remaining = [s for s in selected_songs if s not in chosen_songs and s != current_song]
+            if not remaining:
+                break
+            song1, song2 = current_song, random.choice(remaining)
+        
+        # 進行 PK
+        while True:
+            print("\n請選擇一首歌曲：")
+            print(f"1: {song1}")
+            print(f"2: {song2}")
+            choice = input("請輸入 1 或 2: ").strip()
+            
+            if choice == "1":
+                chosen_songs.add(song2)
+                current_song = song1
+                break
+            elif choice == "2":
+                chosen_songs.add(song1)
+                current_song = song2
+                break
+            else:
+                print("無效輸入，請重新選擇。")
+    
+    print(f"\n你的最愛歌曲是：{current_song}")
+
+# 測試 B 版塊
+album_battle()
