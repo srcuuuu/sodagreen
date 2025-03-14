@@ -1,0 +1,176 @@
+import random
+import json
+import os
+
+# 玩家資料存檔路徑
+PLAYER_DATA_FILE = "players_data.json"
+
+# 儲存所有玩家的資料
+if os.path.exists(PLAYER_DATA_FILE):
+    with open(PLAYER_DATA_FILE, "r", encoding="utf-8") as file:
+        players_data = json.load(file)
+else:
+    players_data = {}
+
+def save_players_data():
+    """將玩家資料存入檔案"""
+    with open(PLAYER_DATA_FILE, "w", encoding="utf-8") as file:
+        json.dump(players_data, file, ensure_ascii=False, indent=4)
+
+def get_or_create_player():
+    """取得玩家資料，若是新玩家則新增"""
+    user_name = input("請輸入你的名字: ").strip()
+
+    # 如果玩家已經存在，則復用舊紀錄
+    for player_id, data in players_data.items():
+        if data["name"] == user_name:
+            print(f"\n歡迎回來，{user_name}！目前你已挑戰 {data['challenge_count']} 次。")
+            return player_id
+    
+    # 若是新玩家，則創建新紀錄
+    player_id = str(len(players_data) + 1)
+    players_data[player_id] = {
+        'name': user_name,
+        'challenge_count': 0,
+        'favorite_song': None,
+        'album_wins': {}  # 記錄每個專輯的獲勝歌曲
+    }
+    save_players_data()
+    return player_id
+
+def song_battle(song_list, album_name=None):
+    """進行歌曲對決"""
+    player_id = get_or_create_player()
+    user_name = players_data[player_id]["name"]
+    
+    # 記錄挑戰專輯的名稱
+    if album_name:
+        print(f"\n你正在挑戰專輯: {album_name}")
+    
+    remaining_songs = set(song_list)  # 使用 set 提高效率
+    current_song = None  # 目前進行 PK 的歌曲
+
+    while len(remaining_songs) > 1:
+        if current_song is None:
+            song1, song2 = random.sample(list(remaining_songs), 2)
+        else:
+            remaining_songs.discard(current_song)  # 移除目前歌曲
+            if not remaining_songs:
+                break
+            song1, song2 = current_song, random.choice(list(remaining_songs))
+
+        while True:
+            print("\n請選擇一首歌曲：")
+            print(f"1: {song1}")
+            print(f"2: {song2}")
+            choice = input("請輸入 1 或 2: ").strip()
+
+            if choice == "1":
+                remaining_songs.discard(song2)  # 被淘汰的歌曲移除
+                current_song = song1
+                break
+            elif choice == "2":
+                remaining_songs.discard(song1)
+                current_song = song2
+                break
+            else:
+                print("無效輸入，請重新選擇。")
+
+    # 更新玩家資料
+    players_data[player_id]["favorite_song"] = current_song
+    players_data[player_id]["challenge_count"] += 1
+    
+    # 如果挑戰了某個專輯，記錄該專輯的最愛歌曲
+    if album_name:
+        if album_name not in players_data[player_id]['album_wins']:
+            players_data[player_id]['album_wins'][album_name] = []
+        players_data[player_id]['album_wins'][album_name].append(current_song)
+    
+    save_players_data()
+
+    # 顯示最愛歌曲
+    print(f"\n{user_name} (玩家編號: {player_id}) 最愛的歌曲是: {current_song}")
+    print(f"{user_name} 參加了 {players_data[player_id]['challenge_count']} 次歌曲挑戰。")
+
+def show_player_data():
+    """顯示所有玩家的資料"""
+    if players_data:
+        print("\n目前所有玩家的資料：")
+        for player_id, data in players_data.items():
+            print(f"玩家編號: {player_id} | 名字: {data['name']} | 挑戰次數: {data['challenge_count']} | 最愛歌曲: {data['favorite_song']}")
+            for album, wins in data['album_wins'].items():
+                print(f"  專輯 {album} 最愛歌曲: {', '.join(wins)}")
+    else:
+        print("目前沒有玩家資料。")
+
+# 所有歌曲庫（包含 A 版塊和 B 版塊的所有歌曲）
+song_library = [
+    "小宇宙", "小情歌", "頻率", "燕窩", "故事", "下雨的夜晚", "蟬想", "你在煩惱什麼", "我好想你", "近未來",
+    "交響夢", "你被寫在我的歌裡", "喜歡寂寞", "當我們一起走過", "飛魚", "藍眼睛", "落寞", "左邊", "無與倫比的美麗", "這天",
+    "遲到千年", "日光", "說了再見以後", "他夏了夏天", "地平線", "我們走了一光年", "暫時失控", "牆外的風景", "煽動", "陪我歌唱",
+    "羅生門", "早點回家", "包圍", "再遇見", "偷閒的翅膀", "繭", "白日出沒的月球", "無眠", "是我的海", "他舉起右手點名",
+    "星月花火", "黎明前最暗時候", "tomorrow will be fine", "你不需要多完美", "相對論", "漂浮", "相信", "吵", "背著你", "城市",
+    "後悔莫及", "飛魚", "oh oh oh oh......", "That Moment Is Over", "是我的海", "漂浮", "頻率", "你喔！", "降落練習存在孿生基因", "相對論IV", "窺",
+    "you are, you will", "小宇宙", "小情歌", "符號", "暫時失控", "被雨困住的城市", "已經", "吵", "背著你", "墜落", "無言歌",
+    "遊樂", "花茶", "四季狂想", "左邊", "無與倫比的美麗", "白日出沒的月球", "這天", "簡單生活", "城市", "相信",
+    "融雪之前", "牧神搭上春色的火車，而", "日光", "在我們之間", "各站停靠", "一千座噴泉", "交響夢", "異次元的玫瑰", "嬉戲之後", "早點回家",
+    "掌聲落下", "他夏了夏天", "蟬想", "包圍", "御花園", "彼得與狼", "共舞", "無眠", "狂熱", "煽動", "近未來",
+    "幸福額度", "你被寫在我的歌裡", "如果凝結就是愛", "喜歡寂寞", "燕窩", "繭", "當我們一起走過", "浪漫派", "控制狂", "你在煩惱什麼",
+    "故事", "從一片落葉開始", "獨處的時候", "我好想你", "偷閒的翅膀", "天天晴朗", "說了再見以後", "我們走了一光年", "再遇見", "拾穗", "你心裡最後一個", "小星星",
+    "痛快的哀艷", "對殺人狂指控", "地平線", "我們不懂", "博物館", "回車諾比的夢", "下雨的夜晚", "我們走了一光年", "他舉起右手點名", "Everyone", "牆外的風景", "未了", "Must Keep Singing"
+]
+
+# 專輯挑戰歌單
+albums = {
+    "蘇打綠": [
+        "後悔莫及", "飛魚", "oh oh oh oh......", "That Moment Is Over", "是我的海", "漂浮", "頻率", "你喔！", "降落練習存在孿生基因", "相對論IV", "窺"
+    ],
+    "小宇宙": [
+        "you are, you will", "小宇宙", "小情歌", "符號", "暫時失控", "被雨困住的城市", "已經", "吵", "背著你", "墜落", "無言歌"
+    ],
+    "無與倫比的美麗": [
+        "遊樂", "花茶", "四季狂想", "左邊", "無與倫比的美麗", "白日出沒的月球", "這天", "簡單生活", "城市", "相信"
+    ],
+    "春日光": [
+        "融雪之前", "牧神搭上春色的火車，而", "日光", "在我們之間", "各站停靠", "一千座噴泉", "交響夢", "異次元的玫瑰", "嬉戲之後", "早點回家"
+    ],
+    "這一刻": [
+        "掌聲落下", "他夏了夏天", "蟬想", "包圍", "御花園", "彼得與狼", "共舞", "無眠", "狂熱", "煽動", "近未來"
+    ],
+    "故事": [
+        "幸福額度", "你被寫在我的歌裡", "如果凝結就是愛", "喜歡寂寞", "燕窩", "繭", "當我們一起走過", "浪漫派", "控制狂", "你在煩惱什麼",
+        "故事", "從一片落葉開始", "獨處的時候", "我好想你", "偷閒的翅膀", "天天晴朗", "說了再見以後", "我們走了一光年", "再遇見", "拾穗", "你心裡最後一個", "小星星"
+    ],
+    "博物館": [
+        "痛快的哀艷", "對殺人狂指控", "地平線", "我們不懂", "博物館", "回車諾比的夢", "下雨的夜晚", "我們走了一光年", "他舉起右手點名", "Everyone", "牆外的風景", "未了", "Must Keep Singing"
+    ]
+}
+
+# 遊戲主流程
+while True:
+    print("請選擇遊戲模式：")
+    print("1: 按照全部歌曲隨機挑戰 (共計: {} 首歌曲)".format(len(song_library)))
+    print("2: 按照專輯分類挑戰")
+    mode = input("請選擇 1 或 2: ").strip()
+
+    if mode == "1":
+        song_battle(song_library)
+    elif mode == "2":
+        print("\n選擇專輯挑戰：")
+        for album in albums:
+            print(f"- {album}")
+        album_name = input("\n請選擇專輯: ").strip()
+
+        if album_name in albums:
+            song_battle(albums[album_name], album_name)
+        else:
+            print("無效的專輯名稱，請重新選擇。")
+            continue
+    else:
+        print("無效輸入，請重新選擇。")
+        continue
+
+    replay = input("\n是否要再挑戰一次？(y/n): ").strip().lower()
+    if replay != 'y':
+        print("感謝遊玩，期待下次見！")
+        break
